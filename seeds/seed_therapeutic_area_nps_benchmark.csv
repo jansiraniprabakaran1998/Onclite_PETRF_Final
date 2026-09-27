@@ -1,0 +1,8 @@
+therapeutic_area,benchmark_nps_low,benchmark_nps_high
+Oncology,15,40
+Immunology,10,35
+Cardiology,20,45
+Neurology,5,30
+Endocrinology,15,38
+Rare Disease,-5,25
+Infectious Disease,10,32

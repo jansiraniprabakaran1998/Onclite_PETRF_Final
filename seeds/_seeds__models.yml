@@ -1,0 +1,22 @@
+version: 2
+
+seeds:
+  - name: seed_country_region_map
+    description: "Static reference mapping ISO country codes to global sales regions, used to roll DIM_RESPONDENT.country_code up to global_region in the dashboard region filter."
+    columns:
+      - name: country_code
+        tests: [not_null, unique]
+      - name: country_name
+        tests: [not_null]
+      - name: global_region
+        tests: [not_null]
+
+  - name: seed_therapeutic_area_nps_benchmark
+    description: "Industry-benchmark NPS ranges by therapeutic area, used to color-code the Power BI NPS gauge (below/within/above benchmark)."
+    columns:
+      - name: therapeutic_area
+        tests: [not_null, unique]
+      - name: benchmark_nps_low
+        tests: [not_null]
+      - name: benchmark_nps_high
+        tests: [not_null]

@@ -1,0 +1,154 @@
+version: 2
+
+models:
+  - name: dim_product
+    description: "Gold: current-state product dimension. Full history is tracked in snapshots/snap_product.sql."
+    columns:
+      - name: product_key
+        tests: [not_null, unique]
+      - name: product_id
+        tests: [not_null, unique]
+      - name: product_name
+        tests: [not_null]
+
+  - name: dim_indication
+    description: "Gold: disease/indication dimension."
+    columns:
+      - name: indication_key
+        tests: [not_null, unique]
+      - name: indication_id
+        tests: [not_null, unique]
+
+  - name: dim_survey
+    description: "Gold: one row per fielded survey instance."
+    columns:
+      - name: survey_key
+        tests: [not_null, unique]
+      - name: survey_id
+        tests: [not_null, unique]
+
+  - name: dim_wave
+    description: "Gold: tracking-wave dimension, derived from distinct wave codes on dim_survey."
+    columns:
+      - name: wave_key
+        tests: [not_null, unique]
+      - name: wave_id
+        tests: [not_null, unique]
+
+  - name: dim_respondent
+    description: "Gold: de-identified HCP respondent dimension."
+    columns:
+      - name: respondent_key
+        tests: [not_null, unique]
+      - name: respondent_id
+        tests: [not_null, unique]
+
+  - name: dim_question
+    description: "Gold: survey question dimension, linked to product where applicable."
+    columns:
+      - name: question_key
+        tests: [not_null, unique]
+      - name: question_id
+        tests: [not_null, unique]
+      - name: product_key_ref
+        tests:
+          - relationships:
+              to: ref('dim_product')
+              field: product_key
+
+  - name: product_indication
+    description: "Gold bridge: resolves many-to-many product <-> indication relationships."
+    columns:
+      - name: product_indication_key
+        tests: [not_null, unique]
+      - name: product_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_product')
+              field: product_key
+      - name: indication_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_indication')
+              field: indication_key
+
+  - name: fact_response
+    description: "Gold: grain = one respondent's answer to one question, in one wave, for one survey."
+    columns:
+      - name: response_id
+        tests: [not_null, unique]
+      - name: survey_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_survey')
+              field: survey_key
+      - name: respondent_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_respondent')
+              field: respondent_key
+      - name: question_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_question')
+              field: question_key
+      - name: response_score
+        tests:
+          - valid_score_range:
+              min_value: 0
+              max_value: 10
+
+  - name: fact_survey_metrics
+    description: "Gold: pre-aggregated wave-level KPI table consumed directly by Power BI."
+    columns:
+      - name: survey_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_survey')
+              field: survey_key
+      - name: metric_date
+        tests: [not_null]
+      - name: completion_rate
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+              row_condition: "completion_rate is not null"
+              config:
+                severity: warn
+      - name: nps_score
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: -100
+              max_value: 100
+              row_condition: "nps_score is not null"
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [survey_key, wave_key, product_key, indication_key, metric_date]
+
+exposures:
+  - name: petrf_powerbi_dashboard
+    label: "OncLite PETRF Power BI Dashboard"
+    type: dashboard
+    maturity: high
+    url: "https://app.powerbi.com/groups/onclite-petrf/reports/petrf-tracker-dashboard"
+    description: >
+      Executive tracker dashboard showing awareness, preference, and NPS
+      trends by product/indication/wave. See dashboard/ for the data model,
+      DAX measures, and layout spec.
+    depends_on:
+      - ref('fact_survey_metrics')
+      - ref('fact_response')
+      - ref('dim_product')
+      - ref('dim_indication')
+      - ref('dim_survey')
+      - ref('dim_wave')
+    owner:
+      name: PETRF Analytics Team
+      email: petrf-analytics@onclite-example.com

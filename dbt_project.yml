@@ -1,0 +1,79 @@
+name: 'onclite_petrf_dbt'
+version: '1.4.0'
+config-version: 2
+
+profile: 'onclite_petrf'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+require-dbt-version: [">=1.6.0", "<2.0.0"]
+
+vars:
+  # Used by macros/get_valid_response_score_range.sql to bound-check scores
+  min_valid_response_score: 0
+  max_valid_response_score: 10
+  # Controls how far back incremental fact models look for late-arriving data
+  incremental_lookback_days: 3
+  # Toggle for surrogate key hashing algorithm consistency across macros
+  surrogate_key_treat_nulls_as_empty_strings: true
+
+models:
+  onclite_petrf_dbt:
+    +materialized: view
+    +persist_docs:
+      relation: true
+      columns: true
+
+    staging:
+      +schema: staging
+      +materialized: view
+      +tags: ['bronze_to_silver']
+
+    intermediate:
+      +schema: intermediate
+      +materialized: ephemeral
+      +tags: ['silver']
+
+    marts:
+      +schema: marts
+      +materialized: table
+      +tags: ['gold']
+      dimensions:
+        +materialized: table
+        +tags: ['gold', 'dimension']
+      facts:
+        +materialized: incremental
+        +incremental_strategy: merge
+        +tags: ['gold', 'fact']
+
+snapshots:
+  onclite_petrf_dbt:
+    +target_schema: snapshots
+    +strategy: timestamp
+
+seeds:
+  onclite_petrf_dbt:
+    +schema: seeds
+    +quote_columns: false
+
+tests:
+  onclite_petrf_dbt:
+    +store_failures: true
+    +schema: dbt_test_failures
+
+on-run-end:
+  - "{{ log_dbt_run_results(results) }}"
+
+query-comment:
+  comment: "{{ query_comment(node) }}"
+  append: true

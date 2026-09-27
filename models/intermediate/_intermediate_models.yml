@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: int_response_enriched
+    description: >
+      One row per response_id, enriched with wave_id (from stg_survey) and a
+      resolved product_id (falls back to the question's linked product when
+      the response row itself doesn't carry one). Ephemeral.
+    columns:
+      - name: response_id
+        tests: [not_null, unique]
+      - name: survey_id
+        tests: [not_null]
+      - name: respondent_id
+        tests: [not_null]
+      - name: question_id
+        tests: [not_null]
+
+  - name: int_survey_metrics_agg
+    description: >
+      Pre-aggregated wave-level KPIs (respondent counts, avg score, NPS)
+      grouped by survey/wave/product/indication/day. Feeds fact_survey_metrics.
+    columns:
+      - name: survey_id
+        tests: [not_null]
+      - name: metric_date
+        tests: [not_null]
+      - name: avg_response_score
+        

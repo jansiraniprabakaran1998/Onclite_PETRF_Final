@@ -1,0 +1,19 @@
+country_code,country_name,global_region
+US,United States,North America
+CA,Canada,North America
+MX,Mexico,North America
+GB,United Kingdom,Europe
+DE,Germany,Europe
+FR,France,Europe
+IT,Italy,Europe
+ES,Spain,Europe
+NL,Netherlands,Europe
+JP,Japan,Asia Pacific
+CN,China,Asia Pacific
+KR,South Korea,Asia Pacific
+AU,Australia,Asia Pacific
+IN,India,Asia Pacific
+BR,Brazil,Latin America
+AR,Argentina,Latin America
+ZA,South Africa,Middle East & Africa
+AE,United Arab Emirates,Middle East & Africa
